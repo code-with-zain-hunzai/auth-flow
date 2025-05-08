@@ -1,0 +1,22 @@
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Env files
+.env
+.env.local
+
+# Build output
+.next/
+dist/
+
+# OS/Editor
+.DS_Store
+.vscode/
+
+# Optional: client-specific ignores, but not the folder itself
+client/.next/
+client/node_modules/
+client/.env.local
