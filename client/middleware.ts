@@ -7,8 +7,10 @@ const publicRoutes = ["/signup", "/signin"];
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
 
+  console.log("Middleware checking path:", req.nextUrl.pathname);
+
   const token = req.cookies.get("token")?.value;
-  console.log("Token:", token);
+  console.log("Token found:", !!req.cookies.get("token")?.value);
   let isAuthenticated = false;
 
   if (token) {
@@ -31,9 +33,6 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-export const config = {
-  matcher: [
-      '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-      '/(api|trpc)(.*)',
-  ],
-};
+// export const config = {
+//   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+// };
