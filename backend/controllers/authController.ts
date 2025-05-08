@@ -45,12 +45,6 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  if (!email || !password) {
-    return res
-      .status(HTTPStatus.BAD_REQUEST)
-      .json({ message: "All fields are required" });
-  }
-
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -76,11 +70,21 @@ export const loginUser = async (req: Request, res: Response) => {
     // Generate JWT token
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
 
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   maxAge: 3600 * 1000,
+    //   path: "/",
+    //   sameSite: "lax", // or "strict" depending on your needs
+    // });
+
     res.cookie("token", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false,
       maxAge: 3600 * 1000,
       path: "/",
+      sameSite: "lax",
+      domain: "localhost",
     });
 
     res.status(HTTPStatus.OK).json({ message: "Login successful" });

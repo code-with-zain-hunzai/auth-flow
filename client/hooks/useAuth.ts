@@ -13,8 +13,12 @@ export const useAuth = () => {
     setError(null);
     try {
       const response = await api.post("/auth/login", { email, password });
-      setTimeout(() => router.push(Routes.TODO), 100);
+
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       alert("Login successful");
+      router.push(Routes.TODO);
+      router.refresh();
     } catch (err: any) {
       const message = err.response?.data?.message || "Login failed";
       setError(message);
@@ -23,16 +27,13 @@ export const useAuth = () => {
       setLoading(false);
     }
   };
-
   const register = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     try {
       await api.post("/auth/register", { email, password });
-
-      router.push(Routes.SIGNIN);
-
       alert("Registration successful");
+      router.push(Routes.SIGNIN);
     } catch (err: any) {
       const message = err.response?.data?.message || "Registration failed";
       setError(message);
