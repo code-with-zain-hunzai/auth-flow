@@ -14,11 +14,8 @@ export const useAuth = () => {
     try {
       const response = await api.post("/auth/login", { email, password });
 
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       alert("Login successful");
       router.push(Routes.TODO);
-      router.refresh();
     } catch (err: any) {
       const message = err.response?.data?.message || "Login failed";
       setError(message);
