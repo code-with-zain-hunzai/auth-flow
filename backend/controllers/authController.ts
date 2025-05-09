@@ -35,7 +35,7 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const token = jwt.sign(
       { id: newUser._id, role: newUser.role },
-      JWT_SECRET,
+      JWT_SECRET as string,
       { expiresIn: "1h" }
     );
 
@@ -75,11 +75,10 @@ export const loginUser = async (req: Request, res: Response) => {
         .json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign(
-      { id: user._id, role: user.role || "user" },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    if (!JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
+    }
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
 
     res.header("Authorization", `Bearer ${token}`);
 
