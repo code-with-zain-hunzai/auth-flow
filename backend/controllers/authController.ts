@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
-import User from "../model/user";
-import bcrypt from "bcryptjs";
+import User, { UserDocument } from "../model/user";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config";
 
@@ -12,6 +11,9 @@ enum HTTPStatus {
   INTERNAL_SERVER_ERROR = 500,
 }
 
+/**
+ * Register a new user
+ */
 export const registerUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -22,20 +24,28 @@ export const registerUser = async (req: Request, res: Response) => {
   }
 
   try {
-    const userExists = await User.findOne({ email });
-    if (userExists)
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
       return res
         .status(HTTPStatus.BAD_REQUEST)
         .json({ message: "User already exists" });
+    }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await User.create({ email, password });
 
-    const user = await User.create({ email, password: hashedPassword });
+    const token = jwt.sign(
+      { id: newUser._id, role: newUser.role },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    res
-      .status(HTTPStatus.CREATED)
-      .json({ message: "User registered successfully" });
+    res.header("Authorization", `Bearer ${token}`);
+
+    const { password: _, ...safeUser } = newUser.toObject();
+
+    res.status(HTTPStatus.CREATED).json(safeUser);
   } catch (err) {
+    console.error("Registration error:", err);
     res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)
       .json({ message: "Server error" });
@@ -45,6 +55,12 @@ export const registerUser = async (req: Request, res: Response) => {
 export const loginUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
+  if (!email || !password) {
+    return res
+      .status(HTTPStatus.BAD_REQUEST)
+      .json({ message: "Email and password are required" });
+  }
+
   try {
     const user = await User.findOne({ email });
     if (!user) {
@@ -53,55 +69,27 @@ export const loginUser = async (req: Request, res: Response) => {
         .json({ message: "User not found" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
+    if (password !== user.password) {
       return res
         .status(HTTPStatus.BAD_REQUEST)
         .json({ message: "Invalid credentials" });
     }
 
-    if (!JWT_SECRET) {
-      console.error("JWT_SECRET is not defined");
-      return res
-        .status(HTTPStatus.INTERNAL_SERVER_ERROR)
-        .json({ message: "Server configuration error" });
-    }
+    const token = jwt.sign(
+      { id: user._id, role: user.role || "user" },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
-    // Generate JWT token
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+    res.header("Authorization", `Bearer ${token}`);
 
-    // res.cookie("token", token, {
-    //   httpOnly: true,
-    //   secure: process.env.NODE_ENV === "production",
-    //   maxAge: 3600 * 1000,
-    //   path: "/",
-    //   sameSite: "lax", // or "strict" depending on your needs
-    // });
+    const { password: _, ...safeUser } = user.toObject();
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: false,
-      maxAge: 3600 * 1000,
-      path: "/",
-      sameSite: "lax",
-      domain: "localhost",
-    });
-
-    res.status(HTTPStatus.OK).json({ message: "Login successful" });
+    res.status(HTTPStatus.OK).json(safeUser);
   } catch (err) {
     console.error("Login error:", err);
     res
       .status(HTTPStatus.INTERNAL_SERVER_ERROR)
       .json({ message: "Server error" });
   }
-};
-
-export const logoutUser = (req: Request, res: Response) => {
-  res.cookie("token", "", {
-    httpOnly: true,
-    expires: new Date(0),
-    path: "/",
-  });
-
-  res.status(HTTPStatus.OK).json({ message: "Logged out successfully" });
 };
