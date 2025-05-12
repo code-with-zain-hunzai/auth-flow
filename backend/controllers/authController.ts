@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import User, { UserDocument } from "../model/user";
+import User from "../model/user";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../config";
 
@@ -11,9 +11,6 @@ enum HTTPStatus {
   INTERNAL_SERVER_ERROR = 500,
 }
 
-/**
- * Register a new user
- */
 export const registerUser = async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -33,17 +30,15 @@ export const registerUser = async (req: Request, res: Response) => {
 
     const newUser = await User.create({ email, password });
 
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      JWT_SECRET as string,
-      { expiresIn: "1h" }
-    );
+    const token = jwt.sign({ id: newUser._id }, JWT_SECRET as string, {
+      expiresIn: "1h",
+    });
 
     res.header("Authorization", `Bearer ${token}`);
 
     const { password: _, ...safeUser } = newUser.toObject();
 
-    res.status(HTTPStatus.CREATED).json(safeUser);
+    res.status(HTTPStatus.CREATED).json({ safeUser, token });
   } catch (err) {
     console.error("Registration error:", err);
     res
@@ -78,13 +73,14 @@ export const loginUser = async (req: Request, res: Response) => {
     if (!JWT_SECRET) {
       throw new Error("JWT_SECRET is not defined");
     }
+
     const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
 
     res.header("Authorization", `Bearer ${token}`);
 
     const { password: _, ...safeUser } = user.toObject();
 
-    res.status(HTTPStatus.OK).json(safeUser);
+    res.status(HTTPStatus.OK).json({ user: safeUser, token });
   } catch (err) {
     console.error("Login error:", err);
     res
