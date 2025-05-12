@@ -1,7 +1,10 @@
 import express from "express";
+import { authenticate } from "../middleware/authMiddleware";
+import * as todoController from "../controllers/todoController";
+
 const router = express.Router();
 
-import * as todoController from "../controllers/todoController";
+router.use(authenticate);
 
 router.post("/", todoController.createTodo);
 router.get("/", todoController.getAllTodos);

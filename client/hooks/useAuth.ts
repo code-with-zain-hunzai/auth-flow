@@ -1,7 +1,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Routes } from "@/routes/routes";
-import api from "../lib/api";
+import { loginUser, registerUser, logoutUser } from "@/services/authService";
 
 export const useAuth = () => {
   const router = useRouter();
@@ -12,7 +12,10 @@ export const useAuth = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await api.post("/auth/login", { email, password });
+      const data = await loginUser(email, password);
+      console.log("Login response:", data);
+
+      localStorage.setItem("jwt", data.token);
 
       alert("Login successful");
       router.push(Routes.TODO);
@@ -24,11 +27,12 @@ export const useAuth = () => {
       setLoading(false);
     }
   };
+
   const register = async (email: string, password: string) => {
     setLoading(true);
     setError(null);
     try {
-      await api.post("/auth/register", { email, password });
+      await registerUser(email, password);
       alert("Registration successful");
       router.push(Routes.SIGNIN);
     } catch (err: any) {
@@ -42,7 +46,8 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      await api.post("/auth/logout");
+      await logoutUser();
+      localStorage.removeItem("jwt");
       router.push(Routes.SIGNIN);
     } catch (error) {
       console.error("Logout failed", error);
