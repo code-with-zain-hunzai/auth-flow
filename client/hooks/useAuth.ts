@@ -15,7 +15,7 @@ export const useAuth = () => {
       const data = await loginUser(email, password);
       console.log("Login response:", data);
 
-      localStorage.setItem("jwt", data.token);
+      document.cookie = `jwt=${data.token}; path=/  `;
 
       alert("Login successful");
       router.push(Routes.TODO);
@@ -38,21 +38,11 @@ export const useAuth = () => {
     } catch (err: any) {
       const message = err.response?.data?.message || "Registration failed";
       setError(message);
-      alert(message);
+      alert(message);  
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = async () => {
-    try {
-      await logoutUser();
-      localStorage.removeItem("jwt");
-      router.push(Routes.SIGNIN);
-    } catch (error) {
-      console.error("Logout failed", error);
-    }
-  };
-
-  return { login, register, logout, loading, error };
+  return { login, register, loading, error };
 };
